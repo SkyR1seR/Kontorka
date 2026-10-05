@@ -475,10 +475,12 @@ export class GameRenderer {
     rig.update(0.01, { anim: 'idle' });
     scene.add(rig.root);
     const cam = new THREE.PerspectiveCamera(30, 1, 0.05, 10);
-    const sc = rig.root.scale.x;
-    const headY = 1.68 * sc;
-    cam.position.set(0.35, headY + 0.05, 1.25);
-    cam.lookAt(0, headY - 0.02, 0);
+    rig.root.updateMatrixWorld(true);
+    const hp = new THREE.Vector3();
+    rig.head.getWorldPosition(hp);
+    const headY = hp.y + rig.face.height * 0.5 * rig.root.scale.x;
+    cam.position.set(0.32, headY + 0.03, 1.3);
+    cam.lookAt(0, headY - 0.04, 0);
     const rt = new THREE.WebGLRenderTarget(size, size);
     const prevSnap = U.uSnapOn.value;
     U.uSnapOn.value = 0;
