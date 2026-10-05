@@ -381,11 +381,12 @@ export class ServerCore {
         prev.transport.close();
         this.conns.delete(prev.connId);
       }
+      // Сначала регистрируем клиента и шлём welcome, затем — состояние матча
       c.token = msg.token;
-      room.onReconnect(c);
+      c.id = m.id;
       this.clients.set(c.id, c);
       c.transport.send({ t: 'welcome', id: c.id, token: c.token, region: this.region, server: this.serverName, dev: this.dev, version: PROTOCOL_VERSION, rejoined: room.code, iceServers: this.iceServers });
-      room.broadcastLobby();
+      room.onReconnect(c);
       return;
     }
     c.id = `p${this._nextId++}`;
