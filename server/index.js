@@ -12,8 +12,8 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { WebSocketServer } from 'ws';
 import { ServerCore } from '../src/shared/server-core.js';
+import { attachGameServer } from './attach.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -21,7 +21,6 @@ const DIST = path.join(ROOT, 'dist');
 const PORT = Number(process.env.PORT || 8080);
 const DEV = process.env.KONTORKA_DEV === '1';
 const LOG_DIR = path.resolve(ROOT, process.env.KONTORKA_LOGS || 'logs');
-const TICK = 1 / 30;
 
 let iceServers = null;
 if (process.env.KONTORKA_ICE) {
@@ -88,51 +87,8 @@ const server = http.createServer((req, res) => {
   });
 });
 
-// ---------------------------------------------------------------- websocket
-const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 64 * 1024 });
-wss.on('connection', (ws) => {
-  let alive = true;
-  const connId = core.connect({
-    send: (msg) => { if (ws.readyState === 1) ws.send(JSON.stringify(msg)); },
-    close: () => ws.close(),
-  });
-  // Ограничение частоты сообщений от клиента
-  let budget = 60;
-  const refill = setInterval(() => { budget = Math.min(90, budget + 45); }, 1000);
-  ws.on('message', (data) => {
-    if (--budget < 0) return;
-    let msg;
-    try { msg = JSON.parse(data.toString()); } catch { return; }
-    try { core.message(connId, msg); } catch (e) { console.error('message error', e); }
-  });
-  ws.on('pong', () => { alive = true; });
-  const hb = setInterval(() => {
-    if (!alive) { ws.terminate(); return; }
-    alive = false;
-    try { ws.ping(); } catch { /* ignore */ }
-  }, 15000);
-  ws.on('close', () => {
-    clearInterval(refill);
-    clearInterval(hb);
-    core.disconnect(connId);
-  });
-});
-
-// ---------------------------------------------------------------- tick 30 Гц
-let last = process.hrtime.bigint();
-let acc = 0;
-setInterval(() => {
-  const now = process.hrtime.bigint();
-  acc += Number(now - last) / 1e9;
-  last = now;
-  let steps = 0;
-  while (acc >= TICK && steps < 5) {
-    try { core.tick(TICK); } catch (e) { console.error('tick error', e); }
-    acc -= TICK;
-    steps++;
-  }
-  if (acc > 0.5) acc = 0;
-}, 1000 / 60);
+// ---------------------------------------------------------------- websocket + тик
+attachGameServer(server, core);
 
 server.listen(PORT, () => {
   console.log(`ООО «Конторка»: Проверка — сервер на http://localhost:${PORT} (WebSocket /ws)${DEV ? ' [режим разработчика: боты разрешены]' : ''}`);
