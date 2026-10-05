@@ -8,6 +8,7 @@ export function initVoice({ conn, myId, getGame }) {
     return { handle() {}, frame() {}, destroy() {} };
   }
   const peers = new Map(); // id -> { pc, audio, stream }
+  if (new URLSearchParams(location.search).get('dev') === '1') window.__rtcPeers = peers;
   let iceServers = [{ urls: 'stun:stun.l.google.com:19302' }];
   let local = null;
   let micState = 'off'; // off | asking | ready | denied
