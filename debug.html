@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>debug</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}#v{position:fixed;inset:0}</style></head>
+<body><div id="v"></div>
+<script type="module">
+import { GameRenderer } from './src/client/render/renderer.js';
+const r = new GameRenderer(document.getElementById('v'));
+window.R = r;
+const spots = [[24,18.1,Math.PI,'work','type'],[27,20,0.5,'idle'],[29,21,-0.4,'walk'],[33,18.1,Math.PI,'work','type'],[25.5,22.5,2.5,'wave']];
+spots.forEach((s,i)=>{ const c=r.addCharacter('p'+i,i,'x'); Object.assign(c,{x:s[0],z:s[1],rot:s[2],anim:s[3],kind:s[4]||null}); });
+const params = new URLSearchParams(location.search);
+const shot = params.get('shot') || 'follow';
+let last = performance.now();
+function frame(now){ const dt=Math.min(0.05,(now-last)/1000); last=now;
+  if (shot==='follow'){ r.cam.yaw = Math.PI*0.85; r.cam.pitch=0.25; r.cam.dist=3.4; r.render(dt,{x:27,z:20}); }
+  else if (shot==='face'){ r.setCinematic({pos:new window.THREE_V(27.0+Math.sin(0.5)*1.1,1.68,20+Math.cos(0.5)*1.1), look:new window.THREE_V(27,1.62,20), fov:40}); r.render(dt,{x:27,z:20}); }
+  else if (shot==='top'){ r.setCamMode('top'); r.cam.yaw=Math.PI; r.render(dt,{x:28,z:21}); }
+  else if (shot==='canteen'){ r.setCinematic({pos:new window.THREE_V(6,1.7,38.5), look:new window.THREE_V(4,1.3,32), fov:55}); r.render(dt,{x:6,z:38}); }
+  else if (shot==='dark'){ r.zoneDark={openspace:true}; r.setCinematic({pos:new window.THREE_V(24.8,1.5,19.6), look:new window.THREE_V(24,1.4,18.1), fov:50}); r.render(dt,{x:24,z:19}); }
+  else if (shot==='kvadry'){ const c=r.chars.get('p0'); Object.assign(c,{x:20,z:6,rot:0,anim:'idle'}); r.setCinematic({pos:new window.THREE_V(20.6,1.1,7.6), look:new window.THREE_V(20,1.75,6), fov:55}); r.render(dt,{x:20,z:6}); }
+  requestAnimationFrame(frame);}
+import('three').then(T=>{ window.THREE_V = T.Vector3; requestAnimationFrame(frame); });
+</script></body></html>

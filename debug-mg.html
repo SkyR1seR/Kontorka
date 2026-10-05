@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>mg</title></head>
+<body style="background:#334">
+<div id="overlay" style="position:fixed;inset:0"></div>
+<script type="module">
+import '@fontsource/montserrat/cyrillic-800.css';
+import '@fontsource/pt-sans/cyrillic-400.css';
+import '@fontsource/pt-sans/cyrillic-700.css';
+import './styles.css';
+import { openMinigame } from './src/client/minigames/index.js';
+const mg = new URLSearchParams(location.search).get('mg');
+document.getElementById('overlay').style.pointerEvents='auto';
+openMinigame(document.getElementById('overlay'), { mg, title: mg, hint: 'подсказка', stepLabel: 'Шаг 1', data: mg==='compare'?{stampA:'ХОЗЯИН · УТВЕРЖДАЮ', stampB:'ХОЗЯЕН · УТВЕРЖДАЮ', titleA:'Обязательный обед', titleB:'Кофе — обязателен'}:null, myName:'Тестер', onDone:()=>{document.title='done'}, onCancel:()=>{} });
+</script></body></html>
