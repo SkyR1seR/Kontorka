@@ -92,9 +92,11 @@ function headPoint(P, theta, phi) {
   let z = Math.cos(phi) * ct;
   if (y < 0) {
     const k = -y;
-    x *= 1 - (1 - P.jaw) * k;
+    const fr = Math.min(1, Math.max(0, (z + 0.35) / 1.1)); // удлиняем только лицевую часть
+    x *= 1 - (1 - P.jaw) * k * (0.4 + 0.6 * fr);
     if (z > 0) z += P.chin * k * k * z;
-    y *= 1 + P.chinLen * k;
+    y *= 1 + P.chinLen * k * fr;
+    if (z < 0) z *= 1 - 0.25 * k; // затылок переходит в шею
   } else {
     if (z < 0) z *= 1 + P.cranium * 0.12 * y;
     x *= 1 + 0.05 * y;
@@ -226,7 +228,7 @@ function faceTexture(L, female) {
 function hairMask(style, theta, phi) {
   const ap = Math.abs(phi);
   const front = ap < 0.95;
-  const line = front ? 0.4 - (ap / 0.95) * 0.12 : 0.28 - ((ap - 0.95) / (Math.PI - 0.95)) * 0.62;
+  const line = front ? 0.4 - (ap / 0.95) * 0.12 : 0.28 - ((ap - 0.95) / (Math.PI - 0.95)) * 0.78;
   switch (style) {
     case 'bald': return theta > -0.25 && theta < 0.18 && ap > 1.25;
     case 'bob': return theta > (front ? 0.3 - (ap / 0.95) * 0.1 : (ap > 1.35 ? -0.55 : 0.0));
@@ -381,7 +383,8 @@ function buildHead(L, M) {
     ng.rotateX(Math.PI / 2);
     // кончик вниз
     const p = ng.attributes.position;
-    for (let i = 0; i < p.count; i++) p.setY(i, p.getY(i) - p.getZ(i) * 0.35);
+    const droop = 0.35 + 0.3 * Math.max(0, nk - 1);
+    for (let i = 0; i < p.count; i++) p.setY(i, p.getY(i) - p.getZ(i) * droop);
     ng.computeVertexNormals();
     const nose = new THREE.Mesh(ng, M.skinV);
     const f = featureFrame(P, -0.1, 0, -0.035);
