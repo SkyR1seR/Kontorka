@@ -30,7 +30,7 @@ if (process.env.KONTORKA_ICE) {
 
 fs.mkdirSync(LOG_DIR, { recursive: true });
 const CRITICAL = new Set(['room_created', 'room_start', 'match_start', 'shift_start', 'shift_end', 'sabotage', 'incident_discovered',
-  'incident_resolved', 'meeting_start', 'decision', 'order', 'match_end', 'player_left', 'task_done', 'task_fail', 'work_cancel',
+  'incident_resolved', 'meeting_start', 'work_start', 'decision', 'order', 'match_end', 'player_left', 'task_done', 'task_fail', 'work_cancel',
   'trick_plant', 'trick_fake_task', 'accel_explode', 'debiki_crisis']);
 const logStreams = new Map();
 function logEvent(code, e) {

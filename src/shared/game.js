@@ -633,6 +633,7 @@ export class Game {
       case 'explain': return this._onExplain(p, msg);
       case 'decide': return this._onDecide(p, msg);
       case 'kassa_log': return this._onKassaLog(p);
+      case 'dev': return this.settings.dev ? this._devCommand(p, msg) : undefined;
       default:
     }
   }
@@ -752,6 +753,7 @@ export class Game {
   _beginWork(p, work) {
     p.work = { ...work, start: this.t };
     p.anim = 'work';
+    this.logEvent('work_start', { id: p.id, kind: work.kind, station: work.station, uid: work.uid });
     p.moving = false;
     const st = STATION_BY_ID[work.station];
     if (st) {
@@ -1884,6 +1886,41 @@ export class Game {
     this.toAll({ t: 'phase', phase: this.publicPhase() });
     this.toAll({ t: 'result', r: this.result });
     this.onEnd(this.result);
+  }
+
+  // Отладочные команды (только лобби разработчика)
+  _devCommand(p, msg) {
+    if (this.phase.name !== 'work') return;
+    const vred = [...this.players.values()].find((q) => q.role === 'vreditel' && q.alive) || p;
+    switch (msg.cmd) {
+      case 'fire_me':
+        if (p.role === 'director') return;
+        p.alive = false; p.firedAt = this.t; p.anim = 'fired';
+        this._dropCarry(p); this._redistributeTasks(p);
+        this.to(p, { t: 'fired' });
+        break;
+      case 'accel': {
+        if (this.accel) return;
+        const st = STATION_BY_ID.tech_acc1;
+        const inc = this._createIncident(vred, 'accel_overload', st);
+        this.accel = { inc: inc.id, until: this.t + BALANCE.accelCountdown, panels: [] };
+        this._discover(inc, null, null, true);
+        this.toAll({ t: 'fx', kind: 'alarm' });
+        break;
+      }
+      case 'lights': {
+        const z = zoneAt(p.x, p.z);
+        this.dark[z] = this.t + BALANCE.lightsOff;
+        const inc = this._createIncident(vred, 'lights_off', STATION_BY_ID.tech_shield, { zone: z, until: this.t + BALANCE.lightsOff, objName: `свет: ${ZONE_BY_ID[z].name}` });
+        this._discover(inc, null, null, true);
+        this.toAll({ t: 'fx', kind: 'lights_off', zone: z });
+        break;
+      }
+      case 'smoke': this.debiki = 100; break;
+      case 'krediki': this.krediki = 100; break;
+      default:
+    }
+    this.dirty();
   }
 
   // --------------------------------------------------------- connections
